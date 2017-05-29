@@ -1,0 +1,51 @@
+# The vm_max_map_count kernel setting needs to be set to at least 262144.
+# https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html#docker-cli-run-prod-mode
+- name: Set vm_max_map_count kernel setting
+  command: /sbin/sysctl -w vm.max_map_count=262144
+
+# To make sysctl change permanent first test if its already set ? If not set it.
+- name: Check vm.max_map_count and replace
+  replace:
+    dest: /etc/sysctl.conf
+    replace: 'vm.max_map_count=262144 '
+    regexp: '^vm\.max_map_count=(.*) '
+  register: max_map_replace
+
+# If vm.max_map_count has not been set previously, add it now
+- name:  Add vm.max_map_count
+  lineinfile:
+    state   : present
+    dest    : /etc/sysctl.conf
+    line    : 'vm.max_map_count=262144'
+    insertafter: EOF
+  when: max_map_replace.changed == false
+
+# Copy the SSH key so that we can access the git repository.
+# Not required for public repos.
+#- name: Configure SSH public key & permissions
+#  copy:
+#    src: /root/.ssh/id_rsa.pub
+#    dest: /root/.ssh/id_rsa.pub
+#    mode: 0644
+#    owner: root
+#    group: root
+
+
+# Make directory to clone the git repository with Docker compose files.
+- name: Create the folders to host the docker repository.
+  file:
+    path: "{{ docker_repo_folder }}"
+    recurse: yes
+    state: directory
+
+
+# Clone the Docker repo.
+- name: Clone our docker repository
+  git:
+    repo: "{{ docker_repo_remote }}"
+    dest: "{{ docker_repo_folder }}"
+    ssh_opts: -o StrictHostKeyChecking=no
+
+# Start the ELK docker containers with docker-compose
+- name: Get the ELK docker containers up and running
+  command: /usr/local/bin/docker-compose -f "{{ docker_compose_elk_file }}" up -d

@@ -1,0 +1,25 @@
+# Lets get filebeat installed and running
+- name: Install Filebeat
+  apt:
+    name: filebeat
+    state: present
+
+- name: Configure the Beat to start automatically during boot
+  service:
+    name: filebeat
+    enabled: yes
+
+- name: Add custom filebeat configurations.
+  template:
+    src: filebeat.yml
+    dest: /etc/filebeat/filebeat.yml
+
+- name: Start filebeat
+  service:
+    name: filebeat
+    state: started
+
+- name: Import index-only pattern for filebeat
+  shell: ./scripts/import_dashboards -only-index -es http://"{{ hostvars['elk_box']['ansible_ssh_host'] }}":9200
+  args:
+    chdir: /usr/share/filebeat

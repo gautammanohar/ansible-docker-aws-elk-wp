@@ -1,0 +1,25 @@
+# Lets get metricbeat installed and running
+- name: Install Metricbeat
+  apt:
+    name: metricbeat
+    state: present
+
+- name: Configure the Beat to start automatically during boot
+  service:
+    name: metricbeat
+    enabled: yes
+
+- name: Add custom metricbeat configurations.
+  template:
+    src: metricbeat.yml
+    dest: /etc/metricbeat/metricbeat.yml
+
+- name: Start metricbeat
+  service:
+    name: metricbeat
+    state: started
+
+- name: Import index-only pattern for filebeat
+  shell: ./scripts/import_dashboards -es http://"{{ hostvars['elk_box']['ansible_ssh_host'] }}":9200
+  args:
+    chdir: /usr/share/metricbeat

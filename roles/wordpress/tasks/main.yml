@@ -1,0 +1,39 @@
+# Copy the SSH key so that we can access the git repository.
+# Not required for public repos.
+#- name: Configure SSH public key & permissions
+#  copy:
+#    src: /root/.ssh/id_rsa.pub
+#    dest: /root/.ssh/id_rsa.pub
+#    mode: 0644
+#    owner: root
+#    group: root
+
+
+# Make directory to clone the git repository with Docker compose files.
+- name: Create the folders to host the docker repository.
+  file:
+    path: "{{ docker_repo_folder }}"
+    recurse: yes
+    state: directory
+
+
+# Clone the Docker repo.
+- name: Clone our docker repository
+  git:
+    repo: "{{ docker_repo_remote }}"
+    dest: "{{ docker_repo_folder }}"
+    force: yes
+    ssh_opts: -o StrictHostKeyChecking=no
+
+# Ensure that the docker compose file for wordpress has the correct logstash IP.
+- name: Ensuring that we put the correct logstash IP
+  replace:
+    dest: "{{ docker_compose_wordpress_file }}"
+    regexp: '<logstash-ip>'
+    replace: "{{ hostvars['elk_box']['ansible_ssh_host'] }}"
+  changed_when: false
+  failed_when: false
+
+# Start the Wordpress docker containers with docker-compose
+- name: Get the Wordpress/Mysql docker containers up and running
+  command: /usr/local/bin/docker-compose -f "{{ docker_compose_wordpress_file }}" up -d

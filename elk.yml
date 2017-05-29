@@ -1,0 +1,10 @@
+- hosts: elkhosts
+  remote_user: ubuntu
+  become: true
+  become_method: sudo
+  gather_facts: True
+  roles:
+      - common
+      - elk
+      - role: cloudwatch
+        logs: "{{ elklogs }}"

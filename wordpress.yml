@@ -1,0 +1,13 @@
+- hosts: wordpresshosts
+  remote_user: ubuntu
+  become: true
+  become_method: sudo
+  gather_facts: True
+  roles:
+      - common
+      - wordpress
+      - logger
+      - filebeat
+      - metricbeat
+      - role: cloudwatch
+        logs: "{{ wordpresslogs }}"

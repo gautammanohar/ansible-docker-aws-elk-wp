@@ -1,0 +1,15 @@
+# Lets get filebeat installed and running
+- name: Install Filebeat
+  apt:
+    name: filebeat
+    state: present
+
+- name: Configure the Beat to start automatically during boot
+  service:
+    name: filebeat
+    enabled: yes
+
+- name: Start filebeat
+  service:
+    name: filebeat
+    state: started

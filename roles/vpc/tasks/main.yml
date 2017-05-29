@@ -1,0 +1,31 @@
+# AWS VPC Creation
+- name: Creating VPC to host ELK and Wordpress Instances/Containers
+  local_action:
+    module: ec2_vpc
+    region: "{{ vpc_region }}"
+    state: present
+    cidr_block: "{{ vpc_cidr }}/16"
+    resource_tags: {"Name":"{{ vpc_name }}"}
+    subnets:
+      - cidr: "{{ vpc_cidr }}/24"
+        az: "{{ vpc_subnet_az }}"
+        resource_tags: { "Name":"{{ subnet_name }}","Tier":"{{ subnet_tier }}" }
+        internet_gateway: True
+    internet_gateway: yes
+    route_tables:
+      - subnets:
+          - "{{ vpc_cidr }}/24"
+        routes:
+          - dest: 0.0.0.0/0
+            gw: igw
+  register: vpc
+
+- name: Saving VPC ids
+  shell: echo "{{ vpc.vpc_id }}" > "vpc-info.yml"
+  args:
+    chdir: roles/vpc/vars/
+
+- name: Saving Subnet id
+  shell: echo "{{ vpc.subnets[0].id }}" > "subnet-info.yml"
+  args:
+    chdir: roles/vpc/vars/

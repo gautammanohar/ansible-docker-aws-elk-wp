@@ -1,0 +1,38 @@
+- name: Creating the wordpress instance
+  local_action:
+    module: ec2
+    region: "{{ vpc_region }}"
+    group: "{{ elk_wordpress_sg_name }}"
+    keypair: "{{ instance_key_pair }}"
+    instance_type: "{{ wordpress_instance_type }}"
+    instance_profile_name: "{{ instance_role }}"
+    image: "{{ instance_ami }}"
+    vpc_subnet_id: "{{ lookup('file', 'roles/vpc/vars/subnet-info.yml') }}"
+    assign_public_ip: True
+    wait: True
+    wait_timeout: 600
+    instance_tags:
+      Name: "{{ wordpress_instance_name_tag }}"
+  register: wordpress_box
+
+- name: Adding the Wordpress host details
+  local_action:
+    module: lineinfile
+    dest: "./hosts"
+    insertafter: '^\[wordpresshosts\]' # This is not very elegant. A variable should somehow be used here.
+    line: "{{ wordpress_instance_name_tag }} ansible_ssh_private_key_file=/etc/ansible/keys/{{ instance_key_pair }}.pem ansible_ssh_host={{ wordpress_box.instances[0].public_ip }}"
+
+
+- name: Waiting for SSH confirmation from the Wordpress instance
+  local_action:
+    module: wait_for
+    host: "{{ wordpress_box.instances[0].public_ip }}"
+    port: 22
+    state: started
+
+- name: Adding this to inventory for working on it immediately
+  add_host:
+    hostname: "{{ wordpress_instance_name_tag }}"
+    ansible_ssh_private_key_file: "/etc/ansible/keys/{{ instance_key_pair }}.pem"
+    ansible_ssh_host: "{{ wordpress_box.instances[0].public_ip }}"
+    groupname: "{{ wordpress_instance_host_group_name }}"

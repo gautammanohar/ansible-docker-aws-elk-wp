@@ -1,0 +1,3 @@
+- include: provisioner.yml
+- include: elk.yml
+- include: wordpress.yml

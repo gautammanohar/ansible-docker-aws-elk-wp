@@ -1,0 +1,6 @@
+---
+- hosts: all
+  roles:
+    - role: common
+    - role: logger
+    - role: filebeat

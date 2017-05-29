@@ -1,0 +1,32 @@
+# Cloudwatch Logs agent configuration file
+- name: Configure /tmp/awslogs.conf
+  template:
+    dest: /tmp/awslogs.conf
+    group: root
+    mode: 0600
+    owner: root
+    src: awslogs.conf
+
+# Get the agent installation script
+- name: Download the awslogs-agent-setup.py script
+  get_url:
+    dest: /tmp/awslogs-agent-setup.py
+    group: root
+    owner: root
+    mode: 0600
+    url: https://s3.amazonaws.com/aws-cloudwatch/downloads/latest/awslogs-agent-setup.py
+
+# Install the agent
+- name: Install the AWS CloudWatch Logs daemon
+  shell: python /tmp/awslogs-agent-setup.py -n -r {{ vpc_region }} -c /tmp/awslogs.conf
+
+# Cleanup
+- name: Remove /tmp/awslogs.conf
+  file:
+    path: /tmp/awslogs.conf
+    state: absent
+
+- name: Remove /tmp/awslogs-agent-setup.py
+  file:
+    path: /tmp/awslogs-agent-setup.py
+    state: absent

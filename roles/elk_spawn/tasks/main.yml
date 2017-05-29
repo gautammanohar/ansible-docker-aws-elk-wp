@@ -1,0 +1,41 @@
+- name: Creating the ELK stack instance
+  local_action:
+    module: ec2
+    region: "{{ vpc_region }}"
+    group: "{{ elk_wordpress_sg_name }}"
+    keypair: "{{ instance_key_pair }}"
+    instance_type: "{{ elk_instance_type }}"
+    instance_profile_name: "{{ instance_role }}"
+    image: "{{ instance_ami }}"
+    vpc_subnet_id: "{{ lookup('file', 'roles/vpc/vars/subnet-info.yml') }}"
+    assign_public_ip: True
+    wait: True
+    wait_timeout: 600
+    volumes:
+        - device_name: "{{ elk_instance_root_volume_name }}"
+          volume_size: "{{ elk_instance_root_volume_size }}"
+    instance_tags:
+      Name: "{{ elk_instance_name_tag }}"
+  register: elk_box
+
+- name: Adding the ELK host details
+  local_action:
+    module: lineinfile
+    dest: "./hosts"
+    insertafter: '^\[elkhosts\]' # This is not very elegant. A variable should somehow be used here.
+    line: "{{ elk_instance_name_tag }} ansible_ssh_private_key_file=/etc/ansible/keys/{{ instance_key_pair }}.pem ansible_ssh_host={{ elk_box.instances[0].public_ip }}"
+
+
+- name: Waiting for SSH confirmation from the ELK instance
+  local_action:
+    module: wait_for
+    host: "{{ elk_box.instances[0].public_ip }}"
+    port: 22
+    state: started
+
+- name: Adding this to inventory for working on it immediately
+  add_host:
+    hostname: "{{ elk_instance_name_tag }}"
+    ansible_ssh_private_key_file: "/etc/ansible/keys/{{ instance_key_pair }}.pem"
+    ansible_ssh_host: "{{ elk_box.instances[0].public_ip }}"
+    groupname: "{{ elk_instance_host_group_name }}"

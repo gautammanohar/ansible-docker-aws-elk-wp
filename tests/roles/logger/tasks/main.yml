@@ -1,0 +1,11 @@
+# Some common actions to deal with Elasticsearch
+- name: APT | Add Elasticsearch GPG Key
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+# elastic-5.x APT repository
+- name: APT | Configure Elastic repository
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/5.x/apt stable main"
+    state: present

@@ -1,0 +1,16 @@
+- name: Creating security group for ELK stack
+  local_action:
+    module: ec2_group
+    name: "{{ elk_wordpress_sg_name }}"
+    description: "Elk Wordpress security group"
+    region: "{{ vpc_region }}"
+    vpc_id: "{{ lookup('file', 'roles/vpc/vars/vpc-info.yml') }}"
+    state: present
+    rules: "{{ sg_rules }}"
+  register: elk_wordpress_sg
+
+
+- name: Saving Security group ids
+  shell: echo "{{ elk_wordpress_sg.group_id }}" > "sg-info.yml"
+  args:
+    chdir: roles/security_groups/vars/

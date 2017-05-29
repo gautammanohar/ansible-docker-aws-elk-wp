@@ -1,0 +1,89 @@
+# VPC Vars
+vpc_region: us-east-1
+vpc_subnet_az: us-east-1a
+vpc_cidr: 10.0.0.0
+vpc_name: elk_wordpress_vpc
+
+# Subnet Vars
+subnet_name: elk_wordpress_subnet
+subnet_tier: elk_wordpress
+
+# Security Group vars
+elk_wordpress_sg_name: elk_wordpress_security_group
+sg_rules:
+  - proto: tcp
+    from_port: 22
+    to_port: 22
+    cidr_ip: 0.0.0.0/0
+  - proto: tcp
+    from_port: 80
+    to_port: 80
+    cidr_ip: 0.0.0.0/0
+  - proto: tcp
+    from_port: 443
+    to_port: 443
+    cidr_ip: 0.0.0.0/0
+  - proto: tcp
+    from_port: 5044
+    to_port: 5044
+    cidr_ip: 0.0.0.0/0
+  - proto: tcp  # Logstash TCP Input
+    from_port: 5000
+    to_port: 5000
+    cidr_ip: 0.0.0.0/0
+  - proto: tcp  # Elasticsearch HTTP
+    from_port: 9200
+    to_port: 9200
+    cidr_ip: 0.0.0.0/0
+  - proto: tcp  # Elasticsearch TCP transport
+    from_port: 9300
+    to_port: 9300
+    cidr_ip: 0.0.0.0/0
+
+
+# Common EC2 Instance Vars
+instance_ami: ami-49c9295f
+instance_key_pair: n-virginia-temp
+instance_role: elk-cloudlog-role
+
+# ELK Instance Vars
+elk_instance_type: t2.medium
+elk_instance_name_tag: elk_box
+elk_instance_host_group_name: elkhosts
+elk_instance_root_volume_name: /dev/sda1
+elk_instance_root_volume_size: 100
+
+# Wordpress Instance Vars
+wordpress_instance_type: t2.medium
+wordpress_instance_name_tag: wordpress_box
+wordpress_instance_host_group_name: wordpresshosts
+
+# Folder that holds the Docker repos.
+docker_repo_folder: /my_docker_repos/docker-compose-elk
+docker_repo_remote: https://github.com/gautammanohar/docker-compose-elk-wp.git
+docker_compose_elk_file: /my_docker_repos/docker-compose-elk/docker-compose-elk.yml
+docker_compose_wordpress_file: /my_docker_repos/docker-compose-elk/docker-compose-wordpress.yml
+
+# Logging vars
+mysql_general_log_file: /var/lib/docker/volumes/dockercomposeelk_db_logs/_data/mysql_general.log
+mysql_slow_log_file: /var/lib/docker/volumes/dockercomposeelk_db_logs/_data/mysql_slow.log
+mysql_error_log_file: /var/lib/docker/volumes/dockercomposeelk_db_logs/_data/mysql_error.log
+
+elklogs:
+  - file: /var/log/syslog
+    group_name: elk-host-syslog
+    format: "%b %d %H:%M:%S"
+
+wordpresslogs:
+  - file: /var/log/syslog
+    group_name: wp-host-syslog
+    format: "%b %d %H:%M:%S"
+  - file: "{{ mysql_general_log_file }}"
+    group_name: wp-mysql-general-log
+    format: "%Y-%m-%dT%H:%M:%S.%f"
+  - file: "{{ mysql_slow_log_file }}"
+    group_name: wp-mysql-slow-log
+    format: "%Y-%m-%dT%H:%M:%S.%f"
+  - file: "{{ mysql_error_log_file }}"
+    group_name: wp-mysql-error-log
+    format: "%Y-%m-%dT%H:%M:%S.%f"
